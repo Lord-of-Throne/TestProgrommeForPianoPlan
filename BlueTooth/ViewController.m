@@ -7,7 +7,9 @@
 //
 
 #import "ViewController.h"
-#define MyDeviceName @"BT05"
+#define MyDeviceName @"mjm"
+#include <stdio.h>
+#include <string.h>
 @interface ViewController ()
 
 @property (nonatomic, strong) CBCentralManager *centralMgr;
@@ -18,6 +20,11 @@
 @property (weak, nonatomic) IBOutlet UILabel *statusText;
 @property (weak, nonatomic) IBOutlet UITextField *lastText;
 @property (weak, nonatomic) IBOutlet UIButton *TestViewButton;
+@property (weak, nonatomic) IBOutlet UITextField *firstEdit;
+@property (weak, nonatomic) IBOutlet UITextField *secondEdit;
+@property (weak, nonatomic) IBOutlet UITextField *nameEdit;
+@property (weak, nonatomic) IBOutlet UILabel *reciveLabel;
+@property (weak, nonatomic) IBOutlet UITextField *titleEdit;
 
 @end
 
@@ -29,6 +36,15 @@
 }
 - (IBAction)clickbtn:(id)sender {
     
+}
+- (IBAction)nameTouchEvent:(id)sender {
+    // 字符串转Data
+    unsigned char data[1]= {};
+    NSString *name = [NSString stringWithFormat:@"mjm-%@",_nameEdit.text];
+    data[0] = (char)name;
+    NSData *dataB =[NSData dataWithBytes:data length:4];
+    [self writeChar:dataB];
+
 }
 
 //检查App的设备BLE是否可用 （ensure that Bluetooth low energy is supported and available to use on the central device）
@@ -152,6 +168,10 @@ didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic
         }
         NSLog(@"Note status:%u,note value:%u",noteStatus,noteValue);
     }
+
+    NSString *reciveText = [NSString stringWithFormat:@"recive!!!!%X %X %X %X %X",nsdata_bytes[0],nsdata_bytes[1],nsdata_bytes[2],nsdata_bytes[3],nsdata_bytes[4]];
+    NSLog(@"%@",reciveText);
+    _reciveLabel.text = reciveText;
 }
 
 
@@ -173,7 +193,8 @@ didWriteValueForCharacteristic:(CBCharacteristic *)characteristic
         _resultText.text = str;
         return;
     }
-    NSString *str = [NSString stringWithFormat:@"写入%@成功!",_editText.text];
+    
+    NSString *str = [NSString stringWithFormat:@"写入%@ %@ %@ %@ %@成功!",_titleEdit.text,_firstEdit.text,_secondEdit.text,_editText.text,_lastText.text];
     _resultText.text = str;
 }
 
@@ -181,19 +202,32 @@ didWriteValueForCharacteristic:(CBCharacteristic *)characteristic
 - (IBAction)sendClick:(id)sender {
     // 字符串转Data
 
-    unsigned char data[4]= {0x80,0x80};
+    unsigned char data[5]= {};
 //    NSString *third = [self ToHex:[_editText.text intValue]];
 //    NSString *fiurth = [self ToHex:[_lastText.text intValue]];
-    
+
+    int title = [_titleEdit.text intValue];
+    int one = [_firstEdit.text intValue];
+    int two = [_secondEdit.text intValue];
     int three = [_editText.text intValue];
     int four = [_lastText.text intValue];
-    data[2] = (char)three;
-    data[3] = (char)four;
+    
+    int titleNum = (int)strtol((char *)[_titleEdit.text UTF8String], NULL, 16);
+    int oneNum = (int)strtol((char *)[_firstEdit.text UTF8String], NULL, 16);
+    int twoNum = (int)strtol((char *)[_secondEdit.text UTF8String], NULL, 16);
+    int threeNum = (int)strtol((char *)[_editText.text UTF8String], NULL, 16);
+    int fourNum = (int)strtol((char *)[_lastText.text UTF8String], NULL, 16);
+    printf("%X-%X-%X-%X-%X",titleNum,oneNum,twoNum,threeNum,fourNum);
+    data[0] = (char)titleNum;
+    data[1] = (char)oneNum;
+    data[2] = (char)twoNum;
+    data[3] = (char)threeNum;
+    data[4] = (char)fourNum;
 //    
 //    unichar ch =13;
 //    NSString *str =[NSString stringWithUTF8String:(char *)&ch];
 
-    NSData *dataB =[NSData dataWithBytes:data length:4];
+    NSData *dataB =[NSData dataWithBytes:data length:5];
     
     [self writeChar:dataB];
 }
@@ -230,4 +264,5 @@ didWriteValueForCharacteristic:(CBCharacteristic *)characteristic
     }
     return str;
 }
+
 @end
